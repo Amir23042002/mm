@@ -1,6 +1,5 @@
 import { Handler } from '@netlify/functions';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { getStore } from '@netlify/kv';
 
 interface WebhookPayload {
   awb_number: string;
@@ -49,26 +48,27 @@ export const handler: Handler = async (event, context) => {
       };
     }
 
-    // Load existing orders
-    const ordersPath = path.join(process.cwd(), 'data', 'orders.json');
-    let orders = {};
+    // Load existing order from KV storage
+    const store = getStore('orders');
+    const orderNumber = webhookData.order_number;
+    let order = null;
     
     try {
-      const ordersData = await fs.readFile(ordersPath, 'utf8');
-      orders = JSON.parse(ordersData);
+      const orderData = await store.get(`order-${orderNumber}`);
+      if (orderData) {
+        order = JSON.parse(orderData);
+      }
     } catch (error) {
-      console.error('Failed to read orders file:', error);
+      console.error('Failed to read order from KV storage:', error);
       return {
         statusCode: 404,
         headers: corsHeaders,
-        body: JSON.stringify({ error: 'Orders file not found' }),
+        body: JSON.stringify({ error: 'Order not found in storage' }),
       };
     }
 
-    // Find and update the order
-    const orderNumber = webhookData.order_number;
-    if (!orders[orderNumber]) {
-      console.log(`Order ${orderNumber} not found in local storage`);
+    if (!order) {
+      console.log(`Order ${orderNumber} not found in KV storage`);
       return {
         statusCode: 404,
         headers: corsHeaders,
@@ -77,12 +77,12 @@ export const handler: Handler = async (event, context) => {
     }
 
     // Update order status
-    orders[orderNumber].status = webhookData.current_status;
-    orders[orderNumber].lastUpdated = new Date().toISOString();
-    orders[orderNumber].trackingUpdates = orders[orderNumber].trackingUpdates || [];
+    order.status = webhookData.current_status;
+    order.lastUpdated = new Date().toISOString();
+    order.trackingUpdates = order.trackingUpdates || [];
     
     // Add tracking update
-    orders[orderNumber].trackingUpdates.push({
+    order.trackingUpdates.push({
       status: webhookData.current_status,
       previousStatus: webhookData.previous_status,
       updatedAt: webhookData.updated_at,
@@ -93,15 +93,23 @@ export const handler: Handler = async (event, context) => {
 
     // Special handling for delivered status
     if (webhookData.current_status.toLowerCase() === 'delivered') {
-      orders[orderNumber].deliveredAt = webhookData.delivery_date || new Date().toISOString();
-      orders[orderNumber].canReview = true;
+      order.deliveredAt = webhookData.delivery_date || new Date().toISOString();
+      order.canReview = true;
       console.log(`Order ${orderNumber} marked as delivered`);
     }
 
-    // Save updated orders
-    await fs.writeFile(ordersPath, JSON.stringify(orders, null, 2));
-
-    console.log(`Order ${orderNumber} updated successfully`);
+    // Save updated order to KV storage
+    try {
+      await store.set(`order-${orderNumber}`, JSON.stringify(order));
+      console.log(`Order ${orderNumber} updated successfully in KV storage`);
+    } catch (error) {
+      console.error('Failed to save updated order to KV storage:', error);
+      return {
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Failed to update order in storage' }),
+      };
+    }
 
     return {
       statusCode: 200,

@@ -1,6 +1,5 @@
 import { Handler } from '@netlify/functions';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { getStore } from '@netlify/kv';
 
 interface OrderRequest {
   customerName: string;
@@ -193,7 +192,7 @@ export const handler: Handler = async (event, context) => {
       nimbusResult = { error: 'Invalid response from shipping provider' };
     }
 
-    // Create order record for local storage
+    // Create order record for KV storage
     const orderRecord = {
       orderId: orderNumber,
       customerName: orderData.customerName,
@@ -207,28 +206,23 @@ export const handler: Handler = async (event, context) => {
       status: 'Order Placed',
       paymentMethod: 'COD',
       createdAt: new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
       nimbusResponse: nimbusResult,
       trackingId: nimbusResult.data?.awb_number || null,
+      trackingUpdates: [],
+      canReview: false,
+      hasReview: false,
+      reviewId: null
     };
 
-    // Save to local orders.json
+    // Save to Netlify KV
     try {
-      const ordersPath = path.join(process.cwd(), 'data', 'orders.json');
-      let orders = {};
-      
-      try {
-        const ordersData = await fs.readFile(ordersPath, 'utf8');
-        orders = JSON.parse(ordersData);
-      } catch (error) {
-        // File doesn't exist or is empty, start with empty object
-        orders = {};
-      }
-
-      orders[orderNumber] = orderRecord;
-      await fs.writeFile(ordersPath, JSON.stringify(orders, null, 2));
+      const store = getStore('orders');
+      await store.set(`order-${orderNumber}`, JSON.stringify(orderRecord));
+      console.log('Order saved to KV storage:', orderNumber);
     } catch (error) {
-      console.error('Failed to save order locally:', error);
-      // Continue execution even if local save fails
+      console.error('Failed to save order to KV storage:', error);
+      // Continue execution even if KV save fails
     }
 
     return {

@@ -1,6 +1,5 @@
 import { Handler } from '@netlify/functions';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { getStore } from '@netlify/kv';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,23 +35,23 @@ export const handler: Handler = async (event, context) => {
       };
     }
 
-    // Load orders
-    const ordersPath = path.join(process.cwd(), 'data', 'orders.json');
-    let orders = {};
-    
+    // Load order from KV storage
+    let order = null;
     try {
-      const ordersData = await fs.readFile(ordersPath, 'utf8');
-      orders = JSON.parse(ordersData);
+      const store = getStore('orders');
+      const orderData = await store.get(`order-${orderId}`);
+      if (orderData) {
+        order = JSON.parse(orderData);
+      }
     } catch (error) {
-      console.error('Failed to read orders file:', error);
+      console.error('Failed to read order from KV storage:', error);
       return {
         statusCode: 500,
         headers: corsHeaders,
-        body: JSON.stringify({ error: 'Failed to load orders' }),
+        body: JSON.stringify({ error: 'Failed to load order' }),
       };
     }
 
-    const order = orders[orderId];
     if (!order) {
       return {
         statusCode: 404,
