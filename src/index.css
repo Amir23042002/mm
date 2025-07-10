@@ -1,0 +1,147 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 51 100% 50%;
+
+    --card: 0 0% 7%;
+    --card-foreground: 51 100% 50%;
+
+    --popover: 0 0% 0%;
+    --popover-foreground: 51 100% 50%;
+
+    --primary: 51 100% 50%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 0 0% 7%;
+    --secondary-foreground: 51 100% 50%;
+
+    --muted: 0 0% 7%;
+    --muted-foreground: 51 50% 70%;
+
+    --accent: 0 0% 7%;
+    --accent-foreground: 51 100% 50%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 51 100% 50%;
+
+    --border: 51 100% 50%;
+    --input: 0 0% 7%;
+    --ring: 51 100% 50%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 51 100% 50%;
+    --sidebar-primary: 51 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 7%;
+    --sidebar-accent-foreground: 51 100% 50%;
+    --sidebar-border: 51 100% 50%;
+    --sidebar-ring: 51 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-black text-cyber-gold font-orbitron;
+    overflow-x: hidden;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+}
+
+@layer utilities {
+  .cyber-glow {
+    box-shadow: 0 0 10px #FFD700, 0 0 20px #FFD700, 0 0 30px #FFD700;
+  }
+  
+  .cyber-text-glow {
+    text-shadow: 0 0 3px #FFD700, 0 0 6px #FFD700, 0 0 12px #FFD700;
+  }
+  
+  .cyber-border {
+    border: 1px solid #FFD700;
+    box-shadow: 0 0 5px #FFD700;
+  }
+  
+  .cyber-button {
+    @apply bg-transparent border-2 border-cyber-gold text-cyber-gold px-6 py-3 font-orbitron font-bold uppercase tracking-wider transition-all duration-300 hover:bg-cyber-gold hover:text-black hover:shadow-lg;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+  }
+  
+  .cyber-button:hover {
+    box-shadow: 0 0 15px #FFD700, 0 0 25px #FFD700;
+  }
+}
+
+/* Lightning Component Styles */
+.lightning-container {
+  width: 100%;
+  height: 100%;
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+/* Mobile optimizations for lightning */
+@media (max-width: 768px) {
+  .lightning-container {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform;
+  }
+}
+
+/* Text Rotation Component Styles */
+.text-rotate {
+  display: inline-block;
+  overflow: hidden;
+}
+
+.text-rotate-word {
+  display: inline-block;
+}
+
+.text-rotate-element {
+  display: inline-block;
+}
+
+.text-rotate-space {
+  display: inline;
+}
+
+.text-rotate-lines {
+  display: flex;
+  flex-direction: column;
+}
+
+.text-rotate-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
